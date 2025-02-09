@@ -1,7 +1,9 @@
 version: '3'
 services:
   db:
-    image: postgres:15
+    build:
+      context: .
+      dockerfile: Dockerfile.db
     container_name: postgres-db
     environment:
       POSTGRES_USER: postgres
@@ -11,6 +13,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
   postgres_data:
