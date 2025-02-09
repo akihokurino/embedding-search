@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import pickle
@@ -8,11 +10,6 @@ from typing import Any
 
 import pandas as pd
 from dotenv import load_dotenv
-from openai import OpenAI
-from pypdf import PdfReader
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from model.document import (
     Document,
     DocumentPage,
@@ -20,15 +17,17 @@ from model.document import (
     DocumentTag,
     document_page_tags,
 )
+from openai import OpenAI
+from pypdf import PdfReader
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DATABASE_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/sample"
-
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-client = OpenAI(
+openAIClient = OpenAI(
     api_key=OPENAI_API_KEY,
 )
 
@@ -127,7 +126,7 @@ def append_to_page_table(
 
 
 def get_embedding(_text: str) -> list[float]:
-    response = client.embeddings.create(
+    response = openAIClient.embeddings.create(
         model="text-embedding-ada-002", input=[_text[:4000]]
     )
     return response.data[0].embedding
@@ -166,7 +165,7 @@ def append_to_page_table_embeddings(df: pd.DataFrame, _cache_dir: Path) -> pd.Da
 def get_llm_features(_text: str) -> dict[str, Any]:
     user_prompt = USER_PROMPT_TEMPLATE.format(text=_text[:4000])
 
-    response = client.chat.completions.create(
+    response = openAIClient.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},

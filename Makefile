@@ -1,5 +1,8 @@
-run:
+run-db:
 	docker-compose up
+
+run-api:
+	source venv/bin/activate && python -m api
 
 seed:
 	source venv/bin/activate && python -m seed
