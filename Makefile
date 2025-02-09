@@ -10,7 +10,7 @@ seed:
 types:
 	source venv/bin/activate && mypy .
 
-use_postgres:
+console_postgres:
 	docker exec -it postgres-db psql -U postgres -d sample
 
 migrate:

@@ -6,11 +6,12 @@ from typing import final
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
-from model.document import Document, DocumentPage
+from fastapi import FastAPI
+from model.document import DocumentPage, DocumentPageEmbeddings
 from openai import OpenAI
 from pydantic import BaseModel
-from sqlalchemy import create_engine
+from pypdf import PdfReader
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import sessionmaker
 
@@ -29,16 +30,61 @@ app = FastAPI(
 )
 
 
+def embedding_search(query_embedding: list[float]) -> list[_DocumentPageResp]:
+    with SessionLocal() as session:
+        cosine_distance = DocumentPageEmbeddings.embedding.cosine_distance(
+            query_embedding
+        ).label("distance")
+
+        query = (
+            select(DocumentPage, cosine_distance)
+            .join(
+                DocumentPageEmbeddings,
+                DocumentPage.id == DocumentPageEmbeddings.document_page_id,
+            )
+            .options(joinedload(DocumentPage.tags), joinedload(DocumentPage.document))
+            .order_by(cosine_distance)
+            .limit(3)
+        )
+
+        results = session.execute(query).unique().all()
+
+        response: list[_DocumentPageResp] = []
+        for page, distance in results:
+            document_resp = _DocumentResp(
+                id=str(page.document.id),
+                name=page.document.name,
+                created_at=page.document.created_at,
+            )
+
+            page_resp = _DocumentPageResp(
+                id=page.id,
+                document_id=str(page.document_id),
+                page_number=page.number,
+                text=page.text,
+                summary=page.summary,
+                tags=[tag.name for tag in page.tags],
+                document=document_resp,
+            )
+            response.append(page_resp)
+
+        return response
+
+
 @final
-class _SearchPayload(BaseModel):
-    q: str
+class _SearchByTextPayload(BaseModel):
+    text: str
+
+
+@final
+class _SearchByFilePayload(BaseModel):
+    path: str
 
 
 @final
 class _DocumentResp(BaseModel):
     id: str
     name: str
-    pages: list[_DocumentPageResp]
     created_at: datetime
 
 
@@ -51,46 +97,35 @@ class _DocumentPageResp(BaseModel):
     summary: str
     tags: list[str]
 
+    document: _DocumentResp
 
-@app.get("/documents")
-async def _documents(
-    request: Request,
-) -> list[_DocumentResp]:
-    session = SessionLocal()
-    response: list[_DocumentResp] = []
 
-    try:
-        documents = (
-            session.query(Document)
-            .options(joinedload(Document.pages).joinedload(DocumentPage.tags))
-            .all()
-        )
+@app.get("/search_by_text")
+async def _search_by_text(
+    payload: _SearchByTextPayload,
+) -> list[_DocumentPageResp]:
+    embedding_response = openAIClient.embeddings.create(
+        model="text-embedding-ada-002", input=[payload.text[:4000]]
+    )
+    query_embedding = embedding_response.data[0].embedding
+    return embedding_search(query_embedding)
 
-        for doc in documents:
-            pages: list[DocumentPage] = doc.pages
-            document_pages_resp = [
-                _DocumentPageResp(
-                    id=page.id,
-                    document_id=str(page.document_id),
-                    page_number=page.number,
-                    text=page.text,
-                    summary=page.summary,
-                    tags=[tag.name for tag in page.tags],
-                )
-                for page in pages
-            ]
 
-            document_resp = _DocumentResp(
-                id=str(doc.id),
-                name=str(doc.name),
-                pages=document_pages_resp,
-                created_at=doc.created_at,
-            )
-            response.append(document_resp)
-    finally:
-        session.close()
+@app.get("/search_by_file")
+async def _search_by_file(
+    payload: _SearchByFilePayload,
+) -> list[_DocumentPageResp]:
+    file_path = os.path.join(os.path.dirname(__file__), "input", payload.path)
+    reader = PdfReader(str(file_path))
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text() or ""
 
-    return response
+    embedding_response = openAIClient.embeddings.create(
+        model="text-embedding-ada-002", input=[text[:4000]]
+    )
+    query_embedding = embedding_response.data[0].embedding
+    return embedding_search(query_embedding)
 
 
 if __name__ == "__main__":
