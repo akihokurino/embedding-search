@@ -1,5 +1,5 @@
 [project]
-name = "embedding-search-sample"
+name = "embedding-search"
 version = "0.1.0"
 description = ""
 authors = [
