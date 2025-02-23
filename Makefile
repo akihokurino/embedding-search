@@ -2,22 +2,22 @@ run-db:
 	docker-compose up
 
 run-api:
-	source venv/bin/activate && python -m api
+	poetry run python -m api
 
 seed:
-	source venv/bin/activate && python -m seed
+	poetry run python -m seed
 
 types:
-	source venv/bin/activate && mypy .
+	poetry run mypy .
 
 console_postgres:
 	docker exec -it postgres-db psql -U postgres -d sample
 
 migrate:
-	source venv/bin/activate && alembic upgrade head
+	poetry run alembic upgrade head
 
 reset-migrate:
-	source venv/bin/activate && alembic downgrade base && alembic upgrade head
+	poetry run alembic downgrade base && alembic upgrade head
 
 clean:
 	docker-compose down

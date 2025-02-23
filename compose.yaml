@@ -1,19 +1,15 @@
 version: '3'
 services:
   db:
-    build:
-      context: .
-      dockerfile: Dockerfile.db
+    image: pgvector/pgvector:pg17
     container_name: postgres-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: sample
+      POSTGRES_DB: embedding_search
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-
 volumes:
   postgres_data:

@@ -20,6 +20,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    op.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector;"))
+
     # Create documents table
     op.create_table(
         "documents",
@@ -56,16 +58,6 @@ def upgrade() -> None:
         sa.Column("embedding", Vector(1536), nullable=False),
     )
 
-    # Add HNSW index for vector search
-    op.create_index(
-        "embedding_hnsw_index",
-        "document_page_embeddings",
-        ["embedding"],
-        unique=False,
-        postgresql_using="hnsw",
-        postgresql_with={"m": 16, "ef_construction": 64},
-        postgresql_ops={"embedding": "vector_cosine_ops"},
-    )
 
     # Create document_tags table
     op.create_table(
@@ -100,3 +92,5 @@ def downgrade() -> None:
     op.drop_table("document_pages")
     op.drop_table("document_tags")
     op.drop_table("documents")
+
+    op.execute(sa.text("DROP EXTENSION IF EXISTS vector;"))

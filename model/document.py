@@ -65,15 +65,6 @@ class DocumentPageEmbeddings(Base):
 
     document_page = relationship("DocumentPage", back_populates="embedding")
 
-    __table_args__ = (
-        Index(
-            "embedding_hnsw_index",
-            embedding,
-            postgresql_using="hnsw",
-            postgresql_with={"m": 16, "ef_construction": 64},
-            postgresql_ops={"embedding": "vector_cosine_ops"},
-        ),
-    )
 
 
 class DocumentTag(Base):
