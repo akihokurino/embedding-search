@@ -9,3 +9,6 @@
 - pypdf
 - alembic
 - sqlalchemy
+
+## Links
+- https://platform.openai.com/docs/guides/embeddings
