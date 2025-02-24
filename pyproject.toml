@@ -45,3 +45,9 @@ strict = true
 namespace_packages = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
 exclude = "(^|/|\\\\)(venv|alembic)($|/|\\\\)"
+[[tool.mypy.overrides]]
+module = [
+    "pgvector.*",
+    "factory.*",
+]
+ignore_missing_imports = true

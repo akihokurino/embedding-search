@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from datetime import datetime
 from random import randint, sample
 from uuid import uuid4
@@ -29,7 +30,7 @@ def random_normalized_vector() -> NDArray[np.float64]:
     return normalized_vector
 
 
-class DocumentFactory(SQLAlchemyModelFactory):  # type: ignore
+class DocumentFactory(SQLAlchemyModelFactory):
     class Meta:
         model = Document
         sqlalchemy_session = session
