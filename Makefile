@@ -6,6 +6,7 @@ run-api:
 
 seed:
 	poetry run python -m insert_local_pdf
+	poetry run python -m insert_dummy_data
 
 types:
 	poetry run mypy .

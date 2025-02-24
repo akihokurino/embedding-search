@@ -58,7 +58,6 @@ def upgrade() -> None:
         sa.Column("embedding", Vector(1536), nullable=False),
     )
 
-
     # Create document_tags table
     op.create_table(
         "document_tags",
@@ -87,7 +86,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     # Drop tables in reverse order to handle dependencies
     op.drop_table("document_page_tags")
-    op.drop_index("embedding_hnsw_index", table_name="document_page_embeddings")
     op.drop_table("document_page_embeddings")
     op.drop_table("document_pages")
     op.drop_table("document_tags")

@@ -13,7 +13,7 @@ from pypdf import PdfReader
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from const import DATABASE_URL, OPENAI_API_KEY
+from const import DATABASE_URL, OPENAI_API_KEY, EMBEDDING_MODEL
 from model.document import (
     Document,
     DocumentPage,
@@ -124,7 +124,7 @@ def append_to_page_table(
 
 def get_embedding(_text: str) -> list[float]:
     response = openAIClient.embeddings.create(
-        model="text-embedding-3-small", input=[_text[:4000]]
+        model=EMBEDDING_MODEL, input=[_text[:4000]]
     )
     return response.data[0].embedding
 

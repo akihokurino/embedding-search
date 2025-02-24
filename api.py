@@ -13,7 +13,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import sessionmaker
 
-from const import DATABASE_URL, OPENAI_API_KEY
+from const import DATABASE_URL, OPENAI_API_KEY, EMBEDDING_MODEL
 from model.document import DocumentPage, DocumentPageEmbeddings
 
 engine = create_engine(DATABASE_URL)
@@ -103,7 +103,7 @@ async def _search_by_text(
     payload: _SearchByTextPayload,
 ) -> list[_DocumentPageResp]:
     embedding_response = openAIClient.embeddings.create(
-        model="text-embedding-3-small", input=[payload.text[:4000]]
+        model=EMBEDDING_MODEL, input=[payload.text[:4000]]
     )
     query_embedding = embedding_response.data[0].embedding
     return embedding_search(query_embedding)
@@ -120,7 +120,7 @@ async def _search_by_file(
         text += page.extract_text() or ""
 
     embedding_response = openAIClient.embeddings.create(
-        model="text-embedding-3-small", input=[text[:4000]]
+        model=EMBEDDING_MODEL, input=[text[:4000]]
     )
     query_embedding = embedding_response.data[0].embedding
     return embedding_search(query_embedding)
