@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import pickle
 import uuid
 from datetime import datetime
@@ -9,7 +8,12 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from dotenv import load_dotenv
+from openai import OpenAI
+from pypdf import PdfReader
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from const import DATABASE_URL, OPENAI_API_KEY
 from model.document import (
     Document,
     DocumentPage,
@@ -17,14 +21,7 @@ from model.document import (
     DocumentTag,
     document_page_tags,
 )
-from openai import OpenAI
-from pypdf import PdfReader
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-DATABASE_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/sample"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 openAIClient = OpenAI(
@@ -127,7 +124,7 @@ def append_to_page_table(
 
 def get_embedding(_text: str) -> list[float]:
     response = openAIClient.embeddings.create(
-        model="text-embedding-ada-002", input=[_text[:4000]]
+        model="text-embedding-3-small", input=[_text[:4000]]
     )
     return response.data[0].embedding
 

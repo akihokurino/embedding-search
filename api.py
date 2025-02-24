@@ -5,9 +5,7 @@ from datetime import datetime
 from typing import final
 
 import uvicorn
-from dotenv import load_dotenv
 from fastapi import FastAPI
-from model.document import DocumentPage, DocumentPageEmbeddings
 from openai import OpenAI
 from pydantic import BaseModel
 from pypdf import PdfReader
@@ -15,9 +13,9 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import sessionmaker
 
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-DATABASE_URL = f"postgresql+psycopg2://postgres:postgres@localhost:5432/sample"
+from const import DATABASE_URL, OPENAI_API_KEY
+from model.document import DocumentPage, DocumentPageEmbeddings
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 openAIClient = OpenAI(
@@ -105,7 +103,7 @@ async def _search_by_text(
     payload: _SearchByTextPayload,
 ) -> list[_DocumentPageResp]:
     embedding_response = openAIClient.embeddings.create(
-        model="text-embedding-ada-002", input=[payload.text[:4000]]
+        model="text-embedding-3-small", input=[payload.text[:4000]]
     )
     query_embedding = embedding_response.data[0].embedding
     return embedding_search(query_embedding)
@@ -122,7 +120,7 @@ async def _search_by_file(
         text += page.extract_text() or ""
 
     embedding_response = openAIClient.embeddings.create(
-        model="text-embedding-ada-002", input=[text[:4000]]
+        model="text-embedding-3-small", input=[text[:4000]]
     )
     query_embedding = embedding_response.data[0].embedding
     return embedding_search(query_embedding)

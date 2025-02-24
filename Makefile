@@ -5,7 +5,7 @@ run-api:
 	poetry run python -m api
 
 seed:
-	poetry run python -m seed
+	poetry run python -m insert_local_pdf
 
 types:
 	poetry run mypy .

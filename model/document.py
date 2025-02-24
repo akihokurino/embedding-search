@@ -10,7 +10,6 @@ from sqlalchemy import (
     Text,
     String,
     ForeignKey,
-    Index,
     Table,
     Column,
     DateTime,
@@ -30,6 +29,7 @@ class Document(Base):
         DateTime(timezone=True), nullable=False
     )
 
+    # Relation
     pages = relationship("DocumentPage", back_populates="document")
 
 
@@ -44,6 +44,7 @@ class DocumentPage(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
 
+    # Relation
     document = relationship("Document", back_populates="pages")
     tags = relationship(
         "DocumentTag",
@@ -63,8 +64,8 @@ class DocumentPageEmbeddings(Base):
     )
     embedding: Mapped[Vector] = mapped_column(Vector(1536), nullable=False)
 
+    # Relation
     document_page = relationship("DocumentPage", back_populates="embedding")
-
 
 
 class DocumentTag(Base):
@@ -75,11 +76,13 @@ class DocumentTag(Base):
         String(255), nullable=False, unique=True, index=True
     )
 
+    # Relation
     document_pages = relationship(
         "DocumentPage", secondary="document_page_tags", back_populates="tags"
     )
 
 
+# 中間テーブル
 document_page_tags = Table(
     "document_page_tags",
     Base.metadata,
