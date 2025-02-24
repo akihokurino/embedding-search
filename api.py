@@ -28,7 +28,10 @@ app = FastAPI(
 )
 
 
-def embedding_search(query_embedding: list[float]) -> list[_DocumentPageResp]:
+def embedding_search(
+    query_embedding: list[float], similarity_threshold: float = 0.5, limit: int = 5
+) -> list[_DocumentPageResp]:
+    cosine_distance_threshold = 1 - similarity_threshold
     with SessionLocal() as session:
         cosine_distance = DocumentPageEmbeddings.embedding.cosine_distance(
             query_embedding
@@ -41,8 +44,9 @@ def embedding_search(query_embedding: list[float]) -> list[_DocumentPageResp]:
                 DocumentPage.id == DocumentPageEmbeddings.document_page_id,
             )
             .options(joinedload(DocumentPage.tags), joinedload(DocumentPage.document))
+            .where(cosine_distance <= cosine_distance_threshold)
             .order_by(cosine_distance)
-            .limit(3)
+            .limit(limit)
         )
 
         results = session.execute(query).unique().all()
