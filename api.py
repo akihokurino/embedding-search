@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from typing import final
 
+import cohere
 import uvicorn
 from fastapi import FastAPI
 from openai import OpenAI
@@ -13,7 +14,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import sessionmaker
 
-from const import DATABASE_URL, OPENAI_API_KEY, EMBEDDING_MODEL
+from const import DATABASE_URL, OPENAI_API_KEY, EMBEDDING_MODEL, COHERE_API_KEY
 from model.document import DocumentPage, DocumentPageEmbeddings
 
 engine = create_engine(DATABASE_URL)
@@ -21,11 +22,37 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 openAIClient = OpenAI(
     api_key=OPENAI_API_KEY,
 )
+co = cohere.ClientV2(api_key=COHERE_API_KEY)
 app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+
+
+def rerank_results(
+    query: str, results: list[_DocumentPageResp]
+) -> list[_DocumentPageResp]:
+    if not results:
+        return results
+
+    # 検索結果を Cohere の形式に変換
+    rerank_inputs = [
+        f"page_text: {r.text}, summary: {r.summary}, tags: {', '.join(r.tags)}"
+        for r in results
+    ]
+    rerank_response = co.rerank(
+        model="rerank-v3.5",
+        query=query,
+        documents=rerank_inputs,
+        top_n=1,
+    )
+
+    # Cohere のスコア順にソート
+    reranked_indices = [r.index for r in rerank_response.results]
+    sorted_results = [results[i] for i in reranked_indices]
+
+    return sorted_results
 
 
 def embedding_search(
@@ -110,7 +137,8 @@ async def _search_by_text(
         model=EMBEDDING_MODEL, input=[payload.text[:4000]]
     )
     query_embedding = embedding_response.data[0].embedding
-    return embedding_search(query_embedding)
+    results = embedding_search(query_embedding)
+    return rerank_results(payload.text, results)
 
 
 @app.get("/search_by_file")
@@ -127,7 +155,8 @@ async def _search_by_file(
         model=EMBEDDING_MODEL, input=[text[:4000]]
     )
     query_embedding = embedding_response.data[0].embedding
-    return embedding_search(query_embedding)
+    results = embedding_search(query_embedding)
+    return rerank_results(text, results)
 
 
 if __name__ == "__main__":
