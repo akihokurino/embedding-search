@@ -1,8 +1,8 @@
-run-db:
+run:
 	docker-compose up
 
-run-api:
-	poetry run python -m api
+run-with-build:
+	docker-compose up --build
 
 seed:
 	poetry run python -m insert_local_pdf
@@ -20,6 +20,5 @@ migrate:
 reset-migrate:
 	poetry run alembic downgrade base && alembic upgrade head
 
-clean:
-	docker-compose down
-	docker-compose rm
+check-migration:
+	poetry run alembic check

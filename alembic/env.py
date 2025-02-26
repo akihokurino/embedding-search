@@ -3,21 +3,16 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-# ここを追加
+from model import load_all_models
 from model.base import Base
 
-# Alembic Config オブジェクト
 config = context.config
-
-# ログ設定
 fileConfig(config.config_file_name)
-
-# ここで SQLAlchemy のメタデータを指定
+load_all_models()
 target_metadata = Base.metadata
 
 
 def run_migrations_offline():
-    """オフラインモードでのマイグレーション"""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -31,7 +26,6 @@ def run_migrations_offline():
 
 
 def run_migrations_online():
-    """オンラインモードでのマイグレーション"""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",

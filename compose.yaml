@@ -1,5 +1,19 @@
 version: '3'
 services:
+  app:
+    build: .
+    container_name: app
+    environment:
+      DB_HOST: db
+    ports:
+      - '3000:8080'
+    volumes:
+      - .:/app
+    working_dir: /app
+    command:
+      - "sh"
+      - "-c"
+      - "python -m api"
   db:
     image: pgvector/pgvector:pg17
     container_name: postgres-db
